@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Daily Checklist">
+    <meta name="theme-color" content="#1F2937">
+
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <title>Daily Checklist</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #111827;
+            color: #F3F4F6;
+        }
+
+        body {
+            padding-top: max(1rem, env(safe-area-inset-top));
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem 0.5rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .header h1 { font-size: 18px; font-weight: 600; }
+
+        .date-nav { display: flex; gap: 0.5rem; align-items: center; }
+
+        .date-nav button {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .date-nav button:hover { opacity: 0.9; }
+
+        .date-display {
+            font-size: 13px;
+            color: #9CA3AF;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .view-toggle { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+
+        .view-toggle button {
+            background: transparent;
+            border: 1px solid #374151;
+            color: #9CA3AF;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .view-toggle button.active {
+            background: #3B82F6;
+            color: white;
+            border-color: #3B82F6;
+        }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .container-box {
+            background: #1F2937;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checklist-title { font-size: 16px; font-weight: 600; margin: 0 0 0.5rem 0; }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #111827;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10B981, #3B82F6);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #9CA3AF;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .checklist-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            padding: 1rem;
+            background: #111827;
+            border-radius: 6px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+
+        .checklist-item.completed { opacity: 0.6; }
+        .checklist-item.active-timer { border-color: #F59E0B; background: #1F2937; }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border: 2px solid #3B82F6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            background: transparent;
+            margin-top: 0.2rem;
+        }
+
+        .checklist-item.completed .checkbox { background: #3B82F6; }
+
+        .activity-info { flex: 1; }
+        .activity-name { font-size: 14px; font-weight: 500; color: #F3F4F6; margin: 0 0 0.3rem 0; }
+        .checklist-item.completed .activity-name { text-decoration: line-through; color: #9CA3AF; }
+        .activity-time { font-size: 12px; color: #9CA3AF; margin: 0; }
+        .activity-streak { font-size: 11px; color: #F59E0B; font-weight: 500; margin-top: 0.2rem; }
+
+        .timer-display {
+            font-size: 16px;
+            font-weight: 600;
+            color: #F59E0B;
+            margin-top: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .timer-buttons { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+
+        .timer-btn {
+            padding: 0.3rem 0.6rem;
+            font-size: 10px;
+            background: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .timer-btn.stop { background: #EF4444; }
+
+        textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.6rem;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            background: #111827;
+            color: #F3F4F6;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+        }
+
+        textarea:focus { outline: none; border-color: #3B82F6; }
+
+        .motivational-message {
+            text-align: center;
+            padding: 1rem;
+            background: #111827;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #9CA3AF;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: #111827;
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value { font-size: 24px; font-weight: 600; color: #3B82F6; margin: 0.5rem 0; }
+        .stat-label { font-size: 11px; color: #9CA3AF; margin: 0; }
+        .stat-streak { font-size: 10px; color: #F59E0B; font-weight: 500; margin-top: 0.5rem; }
+
+        .insight-card {
+            background: #111827;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #3B82F6;
+        }
+
+        .insight-text { font-size: 12px; color: #9CA3AF; line-height: 1.5; margin: 0; }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #374151;
+            border-top-color: #3B82F6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .today-btn {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .today-btn:hover { opacity: 0.9; }
+
+        /* CALENDAR */
+        .cal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .cal-header button {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .cal-month-label { font-size: 15px; font-weight: 600; }
+
+        .cal-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .cal-weekday {
+            text-align: center;
+            font-size: 10px;
+            color: #9CA3AF;
+            font-weight: 600;
+            padding: 0.2rem 0;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.3rem;
+            width: 100%;
+        }
+
+        .cal-day {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #111827;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0.2rem;
+        }
+
+        .cal-day.empty { background: transparent; cursor: default; }
+        .cal-day.today { border-color: #3B82F6; }
+        .cal-day.selected { background: #1E3A8A; }
+        .cal-day:not(.empty):active { background: #374151; }
+
+        .cal-day-num { font-size: 12px; font-weight: 500; }
+
+        .cal-day-pct {
+            font-size: 8px;
+            margin-top: 2px;
+            color: #9CA3AF;
+        }
+
+        .cal-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+
+        .cal-dot.full { background: #10B981; }
+        .cal-dot.partial { background: #F59E0B; }
+        .cal-dot.none { background: #374151; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Daily Checklist</h1>
+            <div class="date-nav">
+                <button onclick="prevDay()">← Prev</button>
+                <button class="today-btn" onclick="goToday()">Today</button>
+                <button onclick="nextDay()">Next →</button>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="date-display" id="dateDisplay">Loading...</div>
+            <div class="view-toggle">
+                <button class="active" onclick="switchView('checklist')">Checklist</button>
+                <button onclick="switchView('calendar')">Calendar</button>
+                <button onclick="switchView('tracker')">Tracker</button>
+                <button onclick="switchView('insights')">AI</button>
+            </div>
+        </div>
+
+        <!-- CHECKLIST -->
+        <div id="checklistSection" class="section active">
+            <div class="container-box">
+                <h2 class="checklist-title" id="checklistTitle">Today's Schedule</h2>
+
+                <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+                <div class="progress-text" id="progressText">0% Complete</div>
+
+                <div class="checklist-items" id="checklistItems"></div>
+
+                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                    <button onclick="toggleAddForm()" style="flex:1; padding:0.6rem; background:#3B82F6; color:white; border:none; border-radius:6px; font-size:13px; cursor:pointer;">+ Add Task</button>
+                    <button onclick="restoreDay()" style="padding:0.6rem 0.9rem; background:#374151; color:#F3F4F6; border:none; border-radius:6px; font-size:13px; cursor:pointer;">Reset Day</button>
+                </div>
+                <div id="addTaskForm" style="display:none; background:#111827; padding:1rem; border-radius:6px; margin-bottom:1rem;">
+                    <input id="newTaskName" type="text" placeholder="Task name" style="width:100%; padding:0.6rem; margin-bottom:0.5rem; border:1px solid #374151; border-radius:4px; background:#1F2937; color:#F3F4F6; font-size:13px; box-sizing:border-box;">
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                        <input id="newTaskTime" type="time" style="flex:1; padding:0.5rem; border:1px solid #374151; border-radius:4px; background:#1F2937; color:#F3F4F6; font-size:13px;">
+                        <input id="newTaskDur" type="number" placeholder="Min" value="30" style="width:80px; padding:0.5rem; border:1px solid #374151; border-radius:4px; background:#1F2937; color:#F3F4F6; font-size:13px;">
+                    </div>
+                    <button onclick="addCustomTask()" style="width:100%; padding:0.6rem; background:#10B981; color:white; border:none; border-radius:6px; font-size:13px; cursor:pointer;">Save Task</button>
+                </div>
+                <div style="background: #111827; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                    <label style="font-size: 12px; font-weight: 500; color: #9CA3AF; display: block; margin-bottom: 0.5rem;">Daily Notes</label>
+                    <textarea id="dailyNotes" placeholder="How did this day go?"></textarea>
+                </div>
+
+                <div class="motivational-message" id="motivationalMessage">Start checking off your tasks! 🎯</div>
+            </div>
+        </div>
+
+        <!-- CALENDAR -->
+        <div id="calendarSection" class="section">
+            <div class="container-box">
+                <div class="cal-header">
+                    <button onclick="prevMonth()">‹</button>
+                    <div class="cal-month-label" id="calMonthLabel">Month</div>
+                    <button onclick="nextMonth()">›</button>
+                </div>
+                <div class="cal-weekdays">
+                    <div class="cal-weekday">Sun</div>
+                    <div class="cal-weekday">Mon</div>
+                    <div class="cal-weekday">Tue</div>
+                    <div class="cal-weekday">Wed</div>
+                    <div class="cal-weekday">Thu</div>
+                    <div class="cal-weekday">Fri</div>
+                    <div class="cal-weekday">Sat</div>
+                </div>
+                <div class="cal-grid" id="calGrid"></div>
+                <p style="font-size: 10px; color: #9CA3AF; margin-top: 0.8rem; text-align: center;">
+                    🟢 100% done &nbsp;•&nbsp; 🟡 partial &nbsp;•&nbsp; ⚫ nothing yet — tap a day to open it
+                </p>
+            </div>
+        </div>
+
+        <!-- TRACKER -->
+        <div id="trackerSection" class="section">
+            <div class="container-box">
+                <h2 class="checklist-title">Your Success Tracker</h2>
+                <p style="font-size: 12px; color: #9CA3AF; margin-bottom: 1rem;">Last 7 days</p>
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+        </div>
+
+        <!-- AI INSIGHTS -->
+        <div id="insightsSection" class="section">
+            <div class="container-box">
+                <h2 class="checklist-title">🤖 AI Insights</h2>
+                <div id="insightsContent">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 1rem; font-size: 12px; color: #9CA3AF;">Analyzing your habits...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
+                self.addEventListener('install', e => self.skipWaiting());
+                self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+            `));
+        }
+
+        const motivationalMessages = [
+            { threshold: 0, message: '💸 Going into debt' },
+            { threshold: 20, message: '📉 Still losing' },
+            { threshold: 40, message: '⚖️ Might break even' },
+            { threshold: 60, message: '📈 Slightly in positive' },
+            { threshold: 80, message: '💰 Getting ahead' },
+            { threshold: 100, message: '🤑 Gonna be a billionaire!' }
+        ];
+
+        const trackedActivities = [
+            { id: 'a3', name: 'Dials', emoji: '📞' },
+            { id: 'a6', name: 'Reading', emoji: '📖' },
+            { id: 'a0', name: 'Cardio', emoji: '🏃' },
+            { id: 'a1', name: 'Maker Time', emoji: '⚙️' },
+            { id: 'a2', name: 'Call Training', emoji: '🎓' },
+            { id: 'a5', name: 'Lifting', emoji: '💪' },
+            { id: 'a4', name: 'Audits', emoji: '📊' },
+            { id: 'a7', name: 'Sleep', emoji: '😴' }
+        ];
+
+        let currentViewDate = new Date();
+        let calMonthDate = new Date();
+        let activeTimer = null;
+        let timerInterval = null;
+
+        function dateKey(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function getBaseActivities(date) {
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek >= 1 && dayOfWeek <= 6) {
+                return [
+                    { id: 'a0', time: '05:30', name: 'Cardio/Stretch (Mindset)', duration: 60 },
+                    { id: 'a1', time: '06:30', name: 'Maker Time', duration: 100 },
+                    { id: 'a2', time: '08:10', name: 'Call Recording Training', duration: 50 },
+                    { id: 'a3', time: '09:00', name: 'Revenue Generation (Calling)', duration: 660 },
+                    { id: 'a4', time: '20:00', name: 'Audit Closer\'s Day', duration: 5 },
+                    { id: 'a5', time: '20:05', name: 'Lift/Cardio', duration: 55 },
+                    { id: 'a6', time: '21:00', name: 'Read & Get Ready for Bed', duration: 60 },
+                    { id: 'a7', time: '22:00', name: 'Sleep', duration: 450 }
+                ];
+            } else if (dayOfWeek === 0) {
+                return [
+                    { id: 'a1', time: '05:30', name: 'Wake Up + Maker Time', duration: 210 },
+                    { id: 'a5', time: '09:00', name: 'Gym', duration: 60 },
+                    { id: 's1', time: '10:00', name: 'Spend Time with Natasha', duration: 120 },
+                    { id: 'a0', time: '12:00', name: 'Be Outside / Cardio', duration: 60 },
+                    { id: 'a3', time: '13:00', name: 'Generate Revenue', duration: 300 },
+                    { id: 's2', time: '18:00', name: 'See Nana/Nono', duration: 60 },
+                    { id: 's3', time: '19:00', name: 'Stretch', duration: 30 },
+                    { id: 'a6', time: '19:30', name: 'Read Book', duration: 120 },
+                    { id: 'a7', time: '21:30', name: 'Sleep', duration: 480 }
+                ];
+            }
+            return [];
+        }
+
+        function getCompletionPct(date) {
+            const activities = getDailyActivities(date);
+            if (activities.length === 0) return null;
+            const checklist = JSON.parse(localStorage.getItem(`checklist_${dateKey(date)}`) || '{}');
+            const completed = activities.filter(a => checklist[a.id]).length;
+            return Math.round((completed / activities.length) * 100);
+        }
+
+
+        function getDailyActivities(date) {
+            const key = dateKey(date);
+            const removed = JSON.parse(localStorage.getItem(`removed_${key}`) || '[]');
+            const custom = JSON.parse(localStorage.getItem(`custom_${key}`) || '[]');
+            let acts = getBaseActivities(date).filter(a => !removed.includes(a.id));
+            acts = acts.concat(custom);
+            acts.sort((a, b) => a.time.localeCompare(b.time));
+            return acts;
+        }
+
+        function removeTask(taskId) {
+            const key = dateKey(currentViewDate);
+            const custom = JSON.parse(localStorage.getItem(`custom_${key}`) || '[]');
+            const idx = custom.findIndex(c => c.id === taskId);
+            if (idx >= 0) {
+                custom.splice(idx, 1);
+                localStorage.setItem(`custom_${key}`, JSON.stringify(custom));
+            } else {
+                const removed = JSON.parse(localStorage.getItem(`removed_${key}`) || '[]');
+                if (!removed.includes(taskId)) removed.push(taskId);
+                localStorage.setItem(`removed_${key}`, JSON.stringify(removed));
+            }
+            renderChecklist();
+        }
+
+        function restoreDay() {
+            const key = dateKey(currentViewDate);
+            localStorage.removeItem(`removed_${key}`);
+            localStorage.removeItem(`custom_${key}`);
+            renderChecklist();
+        }
+
+        function toggleAddForm() {
+            const f = document.getElementById('addTaskForm');
+            f.style.display = f.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function addCustomTask() {
+            const name = document.getElementById('newTaskName').value.trim();
+            const time = document.getElementById('newTaskTime').value;
+            const dur = parseInt(document.getElementById('newTaskDur').value) || 30;
+            if (!name || !time) { alert('Need a name and a time'); return; }
+            const key = dateKey(currentViewDate);
+            const custom = JSON.parse(localStorage.getItem(`custom_${key}`) || '[]');
+            custom.push({ id: 'c' + Date.now(), time: time, name: name, duration: dur });
+            localStorage.setItem(`custom_${key}`, JSON.stringify(custom));
+            document.getElementById('newTaskName').value = '';
+            document.getElementById('addTaskForm').style.display = 'none';
+            renderChecklist();
+        }
+
+        function formatTime12(t) {
+            const [h, m] = t.split(':').map(Number);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 === 0 ? 12 : h % 12;
+            return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+        }
+
+        function formatDuration(minutes) {
+            if (minutes >= 60) {
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                return mins === 0 ? hours + ' hr' : hours + 'h ' + mins + 'm';
+            }
+            return minutes + ' min';
+        }
+
+        function formatTimer(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            if (hours > 0) return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function calculateStreak(activityId) {
+            let streak = 0;
+            for (let i = 0; i < 365; i++) {
+                const checkDate = new Date();
+                checkDate.setDate(checkDate.getDate() - i);
+                const activities = getDailyActivities(checkDate);
+                if (!activities.some(a => a.id === activityId)) continue;
+                const checklist = JSON.parse(localStorage.getItem(`checklist_${dateKey(checkDate)}`) || '{}');
+                if (checklist[activityId]) {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+            return streak;
+        }
+
+        function updateDateDisplay() {
+            const dateStr = currentViewDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            document.getElementById('dateDisplay').textContent = dateStr;
+        }
+
+        function prevDay() {
+            currentViewDate.setDate(currentViewDate.getDate() - 1);
+            updateDateDisplay();
+            renderChecklist();
+            loadNotes();
+        }
+
+        function nextDay() {
+            currentViewDate.setDate(currentViewDate.getDate() + 1);
+            updateDateDisplay();
+            renderChecklist();
+            loadNotes();
+        }
+
+        function goToday() {
+            currentViewDate = new Date();
+            updateDateDisplay();
+            renderChecklist();
+            loadNotes();
+        }
+
+        function loadNotes() {
+            document.getElementById('dailyNotes').value = localStorage.getItem(`notes_${dateKey(currentViewDate)}`) || '';
+        }
+
+        function renderChecklist() {
+            const activities = getDailyActivities(currentViewDate);
+            const checklist = JSON.parse(localStorage.getItem(`checklist_${dateKey(currentViewDate)}`) || '{}');
+
+            const dateStr = currentViewDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            document.getElementById('checklistTitle').textContent = dateStr;
+
+            let completedCount = 0;
+            const html = activities.map(activity => {
+                const isCompleted = checklist[activity.id];
+                if (isCompleted) completedCount++;
+
+                const streak = calculateStreak(activity.id);
+                const timerState = JSON.parse(localStorage.getItem(`timer_${dateKey(currentViewDate)}_${activity.id}`) || '{"elapsed":0,"running":false}');
+
+                return `
+                    <div class="checklist-item ${isCompleted ? 'completed' : ''} ${timerState.running ? 'active-timer' : ''}" onclick="toggleTask('${activity.id}')">
+                        <div class="checkbox">${isCompleted ? '✓' : ''}</div>
+                        <div class="activity-info">
+                            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;"><p class="activity-name">${activity.name}</p><button onclick="event.stopPropagation(); removeTask('${activity.id}')" style="background:transparent;border:none;color:#6B7280;font-size:16px;cursor:pointer;padding:0 0.2rem;line-height:1;">✕</button></div>
+                            <p class="activity-time">${formatTime12(activity.time)} • ${formatDuration(activity.duration)}</p>
+                            ${streak > 0 ? `<div class="activity-streak">🔥 ${streak} day streak</div>` : ''}
+                            <div class="timer-display">${formatTimer(timerState.elapsed)}</div>
+                            <div class="timer-buttons">
+                                <button class="timer-btn" onclick="event.stopPropagation(); ${timerState.running ? 'stopTimer()' : `startTimer('${activity.id}')`}">${timerState.running ? 'Pause' : 'Start'}</button>
+                                <button class="timer-btn stop" onclick="event.stopPropagation(); resetTimer('${activity.id}')">Reset</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('checklistItems').innerHTML = html || '<p style="font-size:13px;color:#9CA3AF;text-align:center;padding:1rem;">No scheduled activities this day.</p>';
+
+            const pct = activities.length > 0 ? Math.round((completedCount / activities.length) * 100) : 0;
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressText').textContent = pct + '% Complete';
+            document.getElementById('motivationalMessage').textContent = motivationalMessages.find((m, i, arr) => pct >= m.threshold && (i === arr.length - 1 || pct < arr[i + 1].threshold))?.message || '🎯';
+        }
+
+        function toggleTask(taskId) {
+            const key = `checklist_${dateKey(currentViewDate)}`;
+            const checklist = JSON.parse(localStorage.getItem(key) || '{}');
+            checklist[taskId] = !checklist[taskId];
+            localStorage.setItem(key, JSON.stringify(checklist));
+            renderChecklist();
+        }
+
+        function startTimer(activityId) {
+            if (activeTimer === activityId) return;
+            if (activeTimer) stopTimer();
+            activeTimer = activityId;
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const key = `timer_${dateKey(currentViewDate)}_${activityId}`;
+                const state = JSON.parse(localStorage.getItem(key) || '{"elapsed":0,"running":false}');
+                state.elapsed++;
+                state.running = true;
+                localStorage.setItem(key, JSON.stringify(state));
+                renderChecklist();
+            }, 1000);
+            renderChecklist();
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            if (activeTimer) {
+                const key = `timer_${dateKey(currentViewDate)}_${activeTimer}`;
+                const state = JSON.parse(localStorage.getItem(key) || '{"elapsed":0,"running":false}');
+                state.running = false;
+                localStorage.setItem(key, JSON.stringify(state));
+            }
+            activeTimer = null;
+            renderChecklist();
+        }
+
+        function resetTimer(activityId) {
+            const key = `timer_${dateKey(currentViewDate)}_${activityId}`;
+            localStorage.setItem(key, JSON.stringify({ elapsed: 0, running: false }));
+            if (activeTimer === activityId) stopTimer();
+            renderChecklist();
+        }
+
+        /* CALENDAR */
+        function prevMonth() {
+            calMonthDate.setMonth(calMonthDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            calMonthDate.setMonth(calMonthDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const year = calMonthDate.getFullYear();
+            const month = calMonthDate.getMonth();
+            const today = new Date();
+
+            document.getElementById('calMonthLabel').textContent = calMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let html = '';
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="cal-day empty"></div>';
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const cellDate = new Date(year, month, d);
+                const isToday = cellDate.toDateString() === today.toDateString();
+                const isSelected = cellDate.toDateString() === currentViewDate.toDateString();
+                const pct = getCompletionPct(cellDate);
+
+                let dot = '';
+                if (pct !== null) {
+                    const cls = pct >= 100 ? 'full' : pct > 0 ? 'partial' : 'none';
+                    dot = `<div class="cal-dot ${cls}"></div>`;
+                }
+
+                const pctLabel = pct !== null && pct > 0 ? `<div class="cal-day-pct">${pct}%</div>` : '';
+
+                html += `<div class="cal-day ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}" onclick="openDay(${year}, ${month}, ${d})">
+                    <div class="cal-day-num">${d}</div>
+                    ${dot}
+                    ${pctLabel}
+                </div>`;
+            }
+
+            document.getElementById('calGrid').innerHTML = html;
+        }
+
+        function openDay(year, month, day) {
+            currentViewDate = new Date(year, month, day);
+            updateDateDisplay();
+            renderChecklist();
+            loadNotes();
+            switchView('checklist');
+        }
+
+        function renderTracker() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 7);
+
+            const stats = {};
+            trackedActivities.forEach(a => { stats[a.id] = { completed: 0, total: 0, streak: 0 }; });
+
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const activities = getDailyActivities(d);
+                const checklist = JSON.parse(localStorage.getItem(`checklist_${dateKey(d)}`) || '{}');
+                activities.forEach(a => {
+                    if (stats[a.id]) {
+                        stats[a.id].total++;
+                        if (checklist[a.id]) stats[a.id].completed++;
+                    }
+                });
+            }
+
+            trackedActivities.forEach(a => { stats[a.id].streak = calculateStreak(a.id); });
+
+            const html = trackedActivities.map(a => {
+                const s = stats[a.id];
+                const pct = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+                return `<div class="stat-card"><div style="font-size: 20px;">${a.emoji}</div><div class="stat-value">${pct}%</div><p class="stat-label">${a.name}</p><div style="font-size: 10px; color: #9CA3AF;">${s.completed}/${s.total}</div>${s.streak > 0 ? `<div class="stat-streak">🔥 ${s.streak}</div>` : ''}</div>`;
+            }).join('');
+
+            document.getElementById('statsGrid').innerHTML = html;
+        }
+
+        async function renderInsights() {
+            const content = document.getElementById('insightsContent');
+            const last7 = [];
+            for (let i = 0; i < 7; i++) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const pct = getCompletionPct(d);
+                last7.push(pct === null ? 0 : pct);
+            }
+
+            const prompt = `User's completion % last 7 days: ${last7.reverse().join(', ')}%. Activity streaks: ${trackedActivities.map(a => a.name + ':' + calculateStreak(a.id)).join(', ')}. Give 2-3 short insights on patterns and what to improve. Keep each insight to 1-2 sentences.`;
+
+            try {
+                const resp = await fetch('https://api.anthropic.com/v1/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: prompt }] })
+                });
+                const data = await resp.json();
+                const text = data.content[0].text;
+                content.innerHTML = text.split('\n').filter(l => l.trim()).map(l => `<div class="insight-card"><div class="insight-text">${l}</div></div>`).join('');
+            } catch (e) {
+                content.innerHTML = '<div class="insight-card"><div class="insight-text">Keep building consistency! 🔥</div></div>';
+            }
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+
+            const buttons = document.querySelectorAll('.view-toggle button');
+            if (view === 'checklist') {
+                document.getElementById('checklistSection').classList.add('active');
+                buttons[0].classList.add('active');
+            } else if (view === 'calendar') {
+                document.getElementById('calendarSection').classList.add('active');
+                buttons[1].classList.add('active');
+                calMonthDate = new Date(currentViewDate);
+                renderCalendar();
+            } else if (view === 'tracker') {
+                document.getElementById('trackerSection').classList.add('active');
+                buttons[2].classList.add('active');
+                renderTracker();
+            } else if (view === 'insights') {
+                document.getElementById('insightsSection').classList.add('active');
+                buttons[3].classList.add('active');
+                renderInsights();
+            }
+        }
+
+        document.getElementById('dailyNotes').addEventListener('blur', () => {
+            localStorage.setItem(`notes_${dateKey(currentViewDate)}`, document.getElementById('dailyNotes').value);
+        });
+
+        updateDateDisplay();
+        renderChecklist();
+        loadNotes();
+    </script>
+</body>
+</html>
